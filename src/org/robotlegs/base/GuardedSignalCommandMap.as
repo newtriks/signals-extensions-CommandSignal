@@ -2,7 +2,8 @@ package org.robotlegs.base {
 import flash.utils.Dictionary;
 import flash.utils.describeType;
 
-import org.osflash.signals.ISignal;
+import net.richardlord.signals.SignalBase;
+
 import org.robotlegs.core.IGuardedSignalCommandMap;
 import org.robotlegs.core.IInjector;
 
@@ -22,15 +23,15 @@ public class GuardedSignalCommandMap extends SignalCommandMap implements IGuarde
     //---------------------------------------
 
     //import org.robotlegs.core.IGuardedCommandMap;
-    public function mapGuardedSignal(signal:ISignal, commandClass:Class, guards:*, oneShot:Boolean = false):void {
+    public function mapGuardedSignal(signal:SignalBase, commandClass:Class, guards:*, oneShot:Boolean = false):void {
         mapGuardedSignalWithFallback(signal, commandClass, null, guards, oneShot);
     }
 
-    public function mapGuardedSignalClass(signalClass:Class, commandClass:Class, guards:*, oneShot:Boolean = false):ISignal {
-		return mapGuardedSignalClassWithFallback(signalClass, commandClass, null, guards, oneShot);
+    public function mapGuardedSignalClass(signalClass:Class, commandClass:Class, guards:*, oneShot:Boolean = false):SignalBase {
+        return mapGuardedSignalClassWithFallback(signalClass, commandClass, null, guards, oneShot);
     }
-    
-    public function mapGuardedSignalWithFallback(signal:ISignal, commandClass:Class, fallbackCommandClass:Class, guards:*, oneShot:Boolean = false):void {
+
+    public function mapGuardedSignalWithFallback(signal:SignalBase, commandClass:Class, fallbackCommandClass:Class, guards:*, oneShot:Boolean = false):void {
         verifyCommandClass(commandClass);
 
         if (!(guards is Array)) {
@@ -44,8 +45,7 @@ public class GuardedSignalCommandMap extends SignalCommandMap implements IGuarde
 
         const signalCommandMap:Dictionary = signalMap[signal] = signalMap[signal] || new Dictionary(false);
 
-        const callback:Function = function():void 
-		{
+        const callback:Function = function ():void {
             routeSignalToGuardedCommand(signal, arguments, commandClass, fallbackCommandClass, oneShot, guards);
         };
 
@@ -53,35 +53,34 @@ public class GuardedSignalCommandMap extends SignalCommandMap implements IGuarde
         signal.add(callback);
     }
 
-    public function mapGuardedSignalClassWithFallback(signalClass:Class, commandClass:Class, fallbackCommandClass:Class, guards:*, oneShot:Boolean = false):ISignal {
-        var signal:ISignal = getSignalClassInstance(signalClass);
+    public function mapGuardedSignalClassWithFallback(signalClass:Class, commandClass:Class, fallbackCommandClass:Class, guards:*, oneShot:Boolean = false):SignalBase {
+        var signal:SignalBase = getSignalClassInstance(signalClass);
         mapGuardedSignalWithFallback(signal, commandClass, fallbackCommandClass, guards, oneShot);
         return signal;
     }
 
 
-    protected function routeSignalToGuardedCommand(signal:ISignal, valueObjects:Array, commandClass:Class, fallbackCommandClass:Class, oneshot:Boolean, guardClasses:Array):void
-    {
+    protected function routeSignalToGuardedCommand(signal:SignalBase, valueObjects:Array, commandClass:Class, fallbackCommandClass:Class, oneshot:Boolean, guardClasses:Array):void {
 
-		mapSignalValues(signal.valueClasses, valueObjects);
+        mapSignalValues(signal.types, valueObjects);
 
         var approved:Boolean = true;
-		var guardClass:Class;
+        var guardClass:Class;
         var iLength:uint = guardClasses.length;
         for (var i:int = 0; i < iLength; i++) {
             guardClass = guardClasses[i];
             var nextGuard:Object = injector.instantiate(guardClass);
             approved = (approved && nextGuard.approve());
-			if ((!approved) && (fallbackCommandClass == null)) {
-		        unmapSignalValues(signal.valueClasses, valueObjects);
+            if ((!approved) && (fallbackCommandClass == null)) {
+                unmapSignalValues(signal.types, valueObjects);
                 return;
             }
         }
-        
-		var commandToInstantiate:Class = approved ? commandClass : fallbackCommandClass;
+
+        var commandToInstantiate:Class = approved ? commandClass : fallbackCommandClass;
 
         var command:Object = injector.instantiate(commandToInstantiate);
-        unmapSignalValues(signal.valueClasses, valueObjects);
+        unmapSignalValues(signal.types, valueObjects);
         command.execute();
 
         if (oneshot)

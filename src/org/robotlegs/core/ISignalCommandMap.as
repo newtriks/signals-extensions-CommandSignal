@@ -1,21 +1,19 @@
-package org.robotlegs.core
-{
-	import org.osflash.signals.ISignal;
-	
-    public interface ISignalCommandMap
-    {
-        function mapSignal(signal:ISignal, commandClass:Class, oneShot:Boolean = false):void;
+package org.robotlegs.core {
+import net.richardlord.signals.SignalBase;
 
-        function mapSignalClass(signalClass:Class, commandClass:Class, oneShot:Boolean = false):ISignal;
+public interface ISignalCommandMap {
+    function mapSignal(signal:SignalBase, commandClass:Class, oneShot:Boolean = false):void;
 
-        function hasSignalCommand(signal:ISignal, commandClass:Class):Boolean;
+    function mapSignalClass(signalClass:Class, commandClass:Class, oneShot:Boolean = false):SignalBase;
 
-        function unmapSignal(signal:ISignal, commandClass:Class):void;
-		
-        function unmapSignalClass(signalClass:Class, commandClass:Class):void;
+    function hasSignalCommand(signal:SignalBase, commandClass:Class):Boolean;
 
-        function detain(command:Object):void;
+    function unmapSignal(signal:SignalBase, commandClass:Class):void;
 
-        function release(command:Object):void;
-    }
+    function unmapSignalClass(signalClass:Class, commandClass:Class):void;
+
+    function detain(command:Object):void;
+
+    function release(command:Object):void;
+}
 }
